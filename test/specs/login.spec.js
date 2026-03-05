@@ -22,7 +22,7 @@ describe('Login', () => {
             expect(response.status).to.equal(200);
         });
 
-        it('Deve validar "Content-Type" e a presença de token', async ()=> {
+        it('Deve validar "Content-Type" e a presença de token', async () => {
             const response = await request(BASE_URL)
                 .post('/login')
                 .set('Content-Type', 'application/json')
@@ -31,6 +31,26 @@ describe('Login', () => {
             expect(response.body).to.be.an('object');
             expect(response.body.token).to.be.a('string')
                 .and.to.have.length.greaterThan(0);
+        });
+
+        const scenarios400 = [
+            { name: 'usuário', payload: { user: username, senha: senha } },
+            { name: 'senha', payload: { username: username, pass: senha } }
+        ];
+
+        scenarios400.forEach((scenario) => {
+            it(`Deve retornar 400 quando informado o parametro de [ ${scenario.name} ] inválido`, async () => {
+                const response = await request(BASE_URL)
+                    .post('/login')
+                    .set('Content-Type', 'application/json')
+                    .send(scenario.payload);
+                expect(response.status).to.equal(400);
+                expect(response.headers['content-type']).to.include('application/json');
+                expect(response.body).to.be.an('object');
+                expect(response.body).to.have.property('error');
+                expect(response.body.error).to.be.a('string')
+                    .and.to.not.empty;
+            });
         });
     });
 
