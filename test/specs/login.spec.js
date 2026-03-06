@@ -1,18 +1,12 @@
 const request = require('supertest');
 const { expect } = require('chai');
-const { resetDatabase } = require('../utils/db-helper');
 const { requireEnv } = require('../utils/env');
-
 
 describe('Login', () => {
     describe('POST /login', () => {
         const BASE_URL = requireEnv('BASE_URL');
         const username = requireEnv('TEST_USERNAME');
         const senha = requireEnv('TEST_SENHA');
-
-        beforeEach(() => {
-            resetDatabase();
-        });
 
         it('Deve retornar 200 - login com sucesso', async () => {
             const response = await request(BASE_URL)
@@ -56,7 +50,7 @@ describe('Login', () => {
         const scenarios401 = [
             { name: 'usuário inválido', payload: { username: 'invalid', senha: senha } },
             { name: 'senha inválida', payload: { username: username, senha: 'invalid' } }
-        ]
+        ];
 
         scenarios401.forEach((scenario) => {
             it(`Deve retornar 401 quando informado [ ${scenario.name} ]`, async () => {
