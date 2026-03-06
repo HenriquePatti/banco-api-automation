@@ -52,6 +52,24 @@ describe('Login', () => {
                     .and.to.not.empty;
             });
         });
+
+        const scenarios401 = [
+            { name: 'usuário inválido', payload: { username: 'invalid', senha: senha } },
+            { name: 'senha inválida', payload: { username: username, senha: 'invalid'} }
+        ]
+
+        scenarios401.forEach( (scenario)=> {
+            it(`Deve retornar 401 quando informado ${scenario.name}`, async ()=> {
+                const response = await request(BASE_URL)
+                    .post('/login')
+                    .set('Content-Type', 'application/json')
+                    .send(scenario.payload)
+                expect(response.status).to.equal(401);
+                expect(response.headers['content-type']).to.include('application/json');
+                expect(response.body).to.have.property('error');
+                expect(response.body.error).to.be.a('string').and.to.not.be.empty;
+            })
+        })
     });
 
 });
