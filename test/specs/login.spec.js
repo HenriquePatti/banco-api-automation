@@ -55,21 +55,38 @@ describe('Login', () => {
 
         const scenarios401 = [
             { name: 'usuário inválido', payload: { username: 'invalid', senha: senha } },
-            { name: 'senha inválida', payload: { username: username, senha: 'invalid'} }
+            { name: 'senha inválida', payload: { username: username, senha: 'invalid' } }
         ]
 
-        scenarios401.forEach( (scenario)=> {
-            it(`Deve retornar 401 quando informado ${scenario.name}`, async ()=> {
+        scenarios401.forEach((scenario) => {
+            it(`Deve retornar 401 quando informado [ ${scenario.name} ]`, async () => {
                 const response = await request(BASE_URL)
                     .post('/login')
                     .set('Content-Type', 'application/json')
-                    .send(scenario.payload)
+                    .send(scenario.payload);
                 expect(response.status).to.equal(401);
                 expect(response.headers['content-type']).to.include('application/json');
                 expect(response.body).to.have.property('error');
                 expect(response.body.error).to.be.a('string').and.to.not.be.empty;
-            })
-        })
+            });
+        });
+
+        const scenarios405 = [ 'get', 'put', 'patch', 'delete' ];
+
+        scenarios405.forEach((method) => {
+            it(`Deve retornar 405 quando informado o método inválido [ ${method} ]`, async () => {
+                const response = await request(BASE_URL)
+                [method]('/login')
+                    .set('Content-type', 'application/json')
+                    .send({ username: username, senha: senha });
+                expect(response.status).to.equal(405);
+                expect(response.headers['content-type']).to.include('application/json');
+                expect(response.body).to.be.an('object');
+                expect(response.body).to.have.property('error');
+                expect(response.body.error).to.be.a('string')
+                    .and.to.be.not.empty;
+            });
+        });
     });
 
 });
