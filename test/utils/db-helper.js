@@ -19,7 +19,7 @@ async function resetDatabase() {
 
     await connection.query(sql);
     // O log de sucesso é bom para o desenvolvedor ver no terminal
-    console.log('✅ Banco de dados resetado com sucesso!');
+    //console.log('✅ Banco de dados resetado com sucesso!');
   } catch (error) {
     // 1. Logamos o erro detalhado para depuração
     console.error('❌ FALHA CRÍTICA NO RESET DO BANCO:', error.message);
