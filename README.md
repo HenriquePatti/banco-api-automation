@@ -1,276 +1,455 @@
+# Banco API Automation
 
-# Banco API - Documentação
+Projeto de automação de testes para a API **banco-api**.
 
-## Visão Geral
+A API utilizada como sistema sob teste foi desenvolvida por **Júlio de Lima**.  
+Os testes automatizados deste repositório foram implementados de forma **independente** por mim, com foco em prática de automação de APIs, validação de contrato, cenários negativos e organização de suíte de testes.
 
-O projeto é composto por duas APIs independentes que oferecem suporte a operações financeiras, com uma arquitetura baseada em REST e GraphQL.
+## Objetivo do repositório
 
-- **API REST**: Roda na porta `3000` e gerencia endpoints de contas e transferências.
-- **API GraphQL**: Roda na porta `3001` e fornece operações para consultas e mutações no domínio financeiro.
+Este repositório tem como objetivo demonstrar, na prática:
+
+- automação de testes de API com Node.js
+- uso de **Mocha**, **Chai** e **Supertest**
+- organização de helpers, factories e cenários parametrizados
+- validação de fluxos positivos e negativos
+- análise crítica de divergências entre comportamento observado e contrato documentado no Swagger
+- construção de portfólio técnico em Engenharia de Qualidade
+
+Este README também foi escrito para permitir que qualquer pessoa consiga **subir a aplicação localmente e executar os testes** com o mínimo de atrito possível.
 
 ---
 
-## Regras de Negócio
+## Sistema sob teste
 
-### Serviço de Contas
+A aplicação alvo possui endpoints REST e GraphQL voltados para operações financeiras. Entre os fluxos disponíveis, estão:
 
-#### Regras para obter contas:
+- autenticação de usuário
+- consulta de contas
+- transferências entre contas
 
-- A consulta de contas retorna uma lista paginada de contas, com um limite por página e uma página especificada.
+Neste repositório, o foco atual está na automação de cenários da **API REST**, principalmente nos endpoints:
 
-#### Regras para obter conta por ID:
+- `POST /login`
+- `POST /transferencias`
 
-- A consulta de uma conta por ID deve retornar os detalhes da conta correspondente.
+A documentação interativa da API REST está disponível via Swagger em:
 
-### Serviço de Autenticação de Usuário
+```bash
+http://localhost:3000/api-docs
+```
 
-#### Regras de autenticação:
+---
 
-- O nome de usuário e a senha são obrigatórios.
+## Tecnologias e bibliotecas utilizadas
 
-- O sistema valida se o nome de usuário e a senha fornecidos são corretos.
+### Aplicação e execução
+- **Node.js**
+- **Express**
+- **MySQL**
 
-- Se as credenciais estiverem incorretas, o sistema retorna um erro informando que o usuário ou senha são inválidos.
+### Automação de testes
+- **Mocha** — runner de testes
+- **Chai** — biblioteca de asserções
+- **Supertest** — testes de API HTTP
+- **Mochawesome** — geração de relatórios HTML e JSON
 
-#### Regras de geração de token:
+### Apoio ao projeto
+- **dotenv** — carregamento de variáveis de ambiente
+- **jsonwebtoken** — geração e validação de token JWT
+- **mysql2** — conexão com banco de dados
 
-- O token gerado deve ter um tempo de expiração de 1 hora.
-
-#### Regras de verificação de token:
-
-- O token de autenticação deve ser verificado para garantir que seja válido.
-
-- Se o token for inválido ou expirado, o sistema retorna um erro de autenticação.
-
-### Serviço de Transferências
-
-#### Regras para realizar transferência:
-
-- O valor mínimo para transferências é de R$10,00.
-
-- Transferências acima de R$5.000,00 requerem um token de autenticação (token específico '123456').
-
-- As contas de origem e destino devem estar ativas.
-
-- A conta de origem deve ter saldo suficiente para realizar a transferência.
-
-#### Regras para buscar transferências:
-
-- As transferências podem ser consultadas de forma paginada, com limite de itens por página e página especificada.
-
-- Deve ser possível consultar todas as transferências realizadas.
-
-#### Regras para atualizar transferências:
-
-- Transferências podem ser atualizadas, mas o valor de atualização não pode ser inferior a R$10,00.
-
-- Deve ser validado se as contas de origem e destino existem e estão ativas.
-
-- O saldo da conta de origem deve ser verificado antes de realizar a atualização.
-
-- Transferências acima de R$5.000,00 também requerem autenticação.
-
-#### Regras para modificar transferências:
-
-- O valor de uma transferência pode ser modificado, mas o novo valor deve ser superior ou igual a R$10,00.
-
-- As contas de origem e destino devem estar ativas e existir.
-
-- O saldo das contas de origem e destino deve ser verificado antes da modificação.
-
-#### Regras para remover transferências:
-
-- A remoção de uma transferência deve reverter os saldos das contas de origem e destino.
-
-- Caso a transferência não seja encontrada, o sistema retorna um erro.
-
-- A conta de origem e a conta de destino devem existir e estar ativas.
-
-#### Outras Regras Gerais
-
-- Em todos os casos de falha (como saldo insuficiente ou contas inativas), o sistema deve retornar uma mensagem de erro detalhada e apropriada.
-
-- As transferências são realizadas de forma síncrona e qualquer falha no processo de transferência gera um erro com uma mensagem explicativa.
+---
 
 ## Pré-requisitos
 
-Antes de iniciar, certifique-se de que você tenha as seguintes ferramentas instaladas:
+Antes de executar o projeto, tenha instalado na sua máquina:
 
-- [Node.js](https://nodejs.org/)
-- [MySQL](https://www.mysql.com/)
-- Gerenciador de pacotes npm (vem com o Node.js)
+- **Node.js**
+- **npm**
+- **MySQL**
 
----
+### Versões recomendadas
 
-## Instruções de Configuração
+Se possível, utilize:
 
-### 1. Variáveis de Ambiente (`.env`)
-Crie um arquivo `.env` na raiz do projeto com o seguinte conteúdo:
+- **Node.js 18+**
+- **npm 9+**
+- **MySQL 8+**
 
-```env
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=root
-DB_NAME=banco
-JWT_SECRET=sua_chave_secreta
-PORT=3000
-GRAPHQLPORT=3001
-```
-
-### 2. Inicialização do Banco de Dados
-
-1. Crie o banco de dados e suas tabelas executando o script abaixo no MySQL:
-   ```sql
-   CREATE DATABASE banco;
-   USE banco;
-
-   CREATE TABLE contas (
-       id INT AUTO_INCREMENT PRIMARY KEY,
-       titular VARCHAR(100) NOT NULL,
-       saldo DECIMAL(10, 2) NOT NULL,
-       ativa BOOLEAN DEFAULT TRUE
-   );
-
-   CREATE TABLE transferencias (
-       id INT AUTO_INCREMENT PRIMARY KEY,
-       conta_origem_id INT NOT NULL,
-       conta_destino_id INT NOT NULL,
-       valor DECIMAL(10, 2) NOT NULL,
-       data_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
-       autenticada BOOLEAN DEFAULT FALSE,
-       FOREIGN KEY (conta_origem_id) REFERENCES contas(id),
-       FOREIGN KEY (conta_destino_id) REFERENCES contas(id)
-   );
-
-   CREATE TABLE usuarios (
-       id INT AUTO_INCREMENT PRIMARY KEY,
-       username VARCHAR(50) NOT NULL UNIQUE,
-       senha VARCHAR(255) NOT NULL
-   );
-   ```
-
-2. Verifique se as tabelas foram criadas corretamente:
-   ```sql
-   USE banco;
-   SHOW TABLES;
-   ```
+> O projeto pode funcionar em outras versões, mas essa faixa tende a reduzir incompatibilidades locais.
 
 ---
 
-## Instruções de Execução
-
-### 1. Instalar Dependências
-Execute o comando abaixo na raiz do projeto:
-```bash
-npm install
-```
-
-### 2. Executar APIs
-- Para iniciar a **API REST**:
-  ```bash
-  npm run rest-api
-  ```
-- Para iniciar a **API GraphQL**:
-  ```bash
-  npm run graphql-api
-  ```
-
----
-
-## Serviços Disponíveis Após a Inicialização
-
-### ApolloServer
-Depois de iniciar a API GraphQL, o ApolloServer estará disponível na porta `3001`. Ele oferece uma interface interativa no endereço [http://localhost:3001/graphql](http://localhost:3001/graphql), onde é possível explorar o schema, testar queries e mutações, e visualizar resultados em tempo real.
-
-O ApolloServer é uma biblioteca amplamente utilizada para implementar servidores GraphQL. Ele simplifica o desenvolvimento, fornecendo suporte para definir schemas, resolvers, autenticação, entre outros recursos.
-
-### Swagger
-Após a inicialização da API REST, a documentação interativa estará disponível no Swagger, no endereço [http://localhost:3000/api-docs](http://localhost:3000/api-docs). Essa documentação permite:
-- Explorar os endpoints disponíveis.
-- Testar requisições diretamente pelo navegador.
-- Obter informações detalhadas sobre parâmetros, respostas e erros.
-
-Para visualizar o Swagger, certifique-se de que a API REST esteja em execução.
-
----
-
-## Estrutura do Projeto
+## Estrutura atual do projeto
 
 ```plaintext
-project/
+.
 ├── src/
-│   ├── config/
-│   │   └── database.js
-│   ├── models/
-│   │   └── contaModel.js
-│   ├── services/
-│   │   ├── contaService.js
-│   │   ├── loginService.js
-│   │   └── transferenciaService.js
+├── test/
+│   ├── factories/
+│   │   └── transfers.factory.js
+│   ├── specs/
+│   │   ├── login.spec.js
+│   │   └── transfers.spec.js
 │   └── utils/
-│       └── errorHandler.js
-├── rest/
-│   ├── app.js
-│   ├── controllers/
-│   │   ├── contaController.js
-│   │   ├── loginController.js
-│   │   └── transferenciaController.js
-│   ├── middlewares/
-│   │   └── authMiddleware.js
-│   ├── routes/
-│   │   ├── contaRoutes.js
-│   │   ├── loginRoutes.js
-│   │   └── transferenciaRoutes.js
-├── graphql/
-│   ├── app.js
-│   ├── resolvers/
-│   │   ├── index.js
-│   │   ├── queryResolvers.js
-│   │   └── mutationResolvers.js
-│   ├── schema/
-│   │   └── index.js
-│   ├── typeDefs.js
-├── config/
-│   └── serverConfig.js
+│       ├── auth.js
+│       ├── db-helper.js
+│       ├── env.js
+│       └── ...
 ├── .env
 ├── package.json
 └── README.md
 ```
 
----
-
-## GraphQL API
-
-### Endpoints
-- URL da API GraphQL: `http://localhost:3001/graphql`
-
-### Definições do Schema (`typeDefs`)
-- **Queries**:
-  - `contas`: Retorna a lista de contas.
-  - `transferencias(page: Int, limit: Int)`: Retorna uma lista paginada de transferências.
-- **Mutations**:
-  - `login(username: String!, senha: String!)`: Autentica um usuário e retorna um token JWT.
-  - `transferir(contaOrigem: Int!, contaDestino: Int!, valor: Float!, mfaToken: String!)`: Realiza uma transferência.
-
-### Exemplo de Requisição com `curl`
-
-#### Consulta de Contas
-```bash
-curl -X POST http://localhost:3001/graphql -H "Content-Type: application/json" -d '{"query": "{ contas { id titular saldo ativa } }"}'
-```
-
-#### Transferência de Fundos
-```bash
-curl -X POST http://localhost:3001/graphql -H "Content-Type: application/json" -d '{"query": "mutation { transferir(contaOrigem: 1, contaDestino: 2, valor: 100.0, mfaToken: \"123456\") }"}'
-```
+> A estrutura pode evoluir conforme novos endpoints, helpers e cenários forem sendo automatizados.
 
 ---
 
-## REST API
+## Como rodar o projeto localmente
 
-### Endpoints
-Base URL: `http://localhost:3000`
+Siga esta ordem.
 
-- **GET /contas**: Retorna todas as contas.
-- **POST /login**: Realiza a autenticação de um usuário.
-- **POST /transferencias**: Realiza uma transferência entre contas.
+### 1. Clone o repositório
+
+```bash
+git clone https://github.com/HenriquePatti/banco-api-automation.git
+cd banco-api-automation
+```
+
+### 2. Instale as dependências
+
+```bash
+npm install
+```
+
+### 3. Crie o banco de dados MySQL
+
+No seu MySQL local, crie o banco com o nome esperado pelo projeto:
+
+```sql
+CREATE DATABASE banco;
+```
+
+> Se você quiser usar outro nome, ajuste também a variável `DB_NAME` no arquivo `.env`.
+
+### 4. Crie o arquivo `.env`
+
+Crie um arquivo `.env` na raiz do projeto.
+
+Exemplo:
+
+```env
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=banco
+JWT_SECRET=sua_chave_secreta
+PORT=3000
+GRAPHQLPORT=3001
+TEST_USERNAME=usuario_teste
+TEST_SENHA=senha_teste
+BASE_URL=http://localhost:3000
+```
+
+---
+
+## Variáveis de ambiente
+
+Abaixo está o significado de cada variável e como preenchê-la.
+
+| Variável | Obrigatória | Exemplo | Como preencher | Finalidade |
+|---|---|---|---|---|
+| `DB_HOST` | Sim | `localhost` | Host do seu MySQL local | Conexão com banco |
+| `DB_USER` | Sim | `root` | Usuário do MySQL local | Conexão com banco |
+| `DB_PASSWORD` | Sim | vazio ou `minhaSenha` | Se seu MySQL usa senha, informe aqui. Se o usuário não tiver senha, deixe vazio | Conexão com banco |
+| `DB_NAME` | Sim | `banco` | Nome do banco criado localmente | Conexão com banco |
+| `JWT_SECRET` | Sim | `sua_chave_secreta` | Defina uma chave qualquer para uso local | Assinatura e validação do JWT |
+| `PORT` | Sim | `3000` | Porta desejada para API REST | Execução local |
+| `GRAPHQLPORT` | Sim | `3001` | Porta desejada para API GraphQL | Execução local |
+| `TEST_USERNAME` | Sim | `usuario_teste` | Usuário válido existente na base | Usado pelos testes de login/autenticação |
+| `TEST_SENHA` | Sim | `senha_teste` | Senha do usuário definido em `TEST_USERNAME` | Usado pelos testes de login/autenticação |
+| `BASE_URL` | Sim | `http://localhost:3000` | URL base da API REST local | Usado pelo Supertest nos testes |
+
+### Observações importantes sobre o `.env`
+
+#### `BASE_URL`
+Para rodar localmente no cenário padrão, use:
+
+```env
+BASE_URL=http://localhost:3000
+```
+
+Se você alterar a porta da API REST em `PORT`, atualize o `BASE_URL` para refletir essa mudança.
+
+Exemplo:
+- se `PORT=3000` → `BASE_URL=http://localhost:3000`
+- se `PORT=4000` → `BASE_URL=http://localhost:4000`
+
+#### `DB_PASSWORD`
+Você deve preencher com a senha real do seu MySQL local.
+
+Exemplos:
+- se o seu usuário `root` **não usa senha**, deixe:
+  ```env
+  DB_PASSWORD=
+  ```
+- se o seu usuário `root` usa senha, por exemplo `123456`, use:
+  ```env
+  DB_PASSWORD=123456
+  ```
+
+#### `TEST_USERNAME` e `TEST_SENHA`
+Essas variáveis precisam apontar para um **usuário real da aplicação**, existente no banco de dados.
+
+Elas são usadas pelos testes automatizados para fazer login e obter o token JWT.
+
+#### `JWT_SECRET`
+Pode ser qualquer valor para seu ambiente local, por exemplo:
+
+```env
+JWT_SECRET=minha_chave_local_123
+```
+
+> Nunca versione credenciais reais no repositório.
+
+---
+
+## Como obter usuário e senha da aplicação
+
+Essa é uma parte importante.
+
+Os testes de login e autenticação precisam de um usuário válido da aplicação.  
+Por isso, `TEST_USERNAME` e `TEST_SENHA` **não podem ficar vazios** se você quiser executar a suíte completa.
+
+### Opção 1 — Verificar se o projeto já popula um usuário de teste
+Antes de criar manualmente, verifique se a base local, o script de reset ou os scripts SQL do projeto já criam usuários automaticamente.
+
+Se já existir um usuário conhecido na tabela `usuarios`, basta usar essas credenciais no `.env`:
+
+```env
+TEST_USERNAME=usuario_existente
+TEST_SENHA=senha_existente
+```
+
+### Opção 2 — Criar manualmente um usuário de teste no banco
+Se a base não vier populada com um usuário válido, você deve criar um usuário na tabela correspondente da aplicação.
+
+O caminho mais seguro é:
+
+1. subir a aplicação localmente
+2. verificar no código ou no banco qual tabela armazena usuários
+3. inserir manualmente um usuário de teste no banco com username e senha conhecidos
+4. usar esses mesmos valores em `TEST_USERNAME` e `TEST_SENHA`
+
+Exemplo conceitual:
+
+```env
+TEST_USERNAME=qa_teste
+TEST_SENHA=123456
+```
+
+### Como descobrir isso de forma prática
+
+#### A. Inspecionar o banco de dados
+Abra seu MySQL e verifique se existem usuários cadastrados:
+
+```sql
+USE banco;
+SELECT * FROM usuarios;
+```
+
+Se existir um usuário válido, use esse par de credenciais no `.env`.
+
+#### B. Consultar os scripts SQL do projeto
+Se houver arquivo de seed, reset ou carga inicial, veja se ele cria registros de usuário e quais valores são usados.
+
+#### C. Criar um usuário de teste específico
+Se não existir nenhum, crie um usuário apenas para testes e documente localmente as credenciais usadas.
+
+> Se a senha da aplicação for armazenada com hash, você não poderá inserir texto puro arbitrariamente sem seguir a mesma regra usada pela API. Nesse caso, o ideal é localizar um usuário já existente na base, usar um seed conhecido ou criar o usuário pelo próprio fluxo da aplicação, se existir.
+
+---
+
+## Ordem recomendada de configuração
+
+Para evitar erro de ambiente, siga esta ordem:
+
+1. instalar dependências com `npm install`
+2. criar o banco `banco` no MySQL
+3. criar e preencher o `.env`
+4. garantir que existe um usuário válido da aplicação para `TEST_USERNAME` e `TEST_SENHA`
+5. subir a API REST
+6. validar acesso ao Swagger
+7. executar os testes
+
+---
+
+## Como subir a aplicação
+
+### API REST
+
+```bash
+npm run rest-api
+```
+
+Após subir a API REST, você pode acessar:
+
+```bash
+http://localhost:3000/api-docs
+```
+
+### API GraphQL
+
+```bash
+npm run graphql-api
+```
+
+> Mesmo que o projeto possua GraphQL, a cobertura atual deste repositório está mais concentrada na API REST.
+
+---
+
+## Como executar os testes
+
+### Rodar toda a suíte automatizada
+
+```bash
+npm run test
+```
+
+### Resetar a base de dados
+
+```bash
+npm run db:reset
+```
+
+Esse comando é útil para restaurar a base antes de executar cenários que dependem de estado inicial previsível.
+
+---
+
+## Relatórios de execução
+
+A suíte gera relatórios com **Mochawesome**.
+
+Ao final da execução, os arquivos de evidência ficam disponíveis para consulta em formato HTML e JSON, permitindo:
+
+- leitura dos cenários executados
+- inspeção de falhas
+- evidência visual de execução da suíte
+
+---
+
+## Cobertura atual implementada
+
+## Login (`POST /login`)
+
+### Cenários positivos
+- autenticação com credenciais válidas e retorno de token
+
+### Validação de nomes de campos inválidos
+- envio de nome inválido para `username`
+- envio de nome inválido para `senha`
+
+### Validação de campos obrigatórios
+- body vazio
+- requisição sem body
+- ausência do campo `username`
+- ausência do campo `senha`
+
+### Validação de conteúdo obrigatório inválido
+- `username` vazio
+- `senha` vazia
+
+### Validação de credenciais inválidas
+- usuário inválido
+- senha inválida
+
+### Validação de métodos não suportados
+- `GET`
+- `PUT`
+- `PATCH`
+- `DELETE`
+
+---
+
+## Transferências (`POST /transferencias`)
+
+### Cenários positivos
+- transferência com valor mínimo permitido
+- transferência com valor intermediário válido
+- transferência dentro da faixa sem token adicional
+
+### Cenários negativos
+- valores abaixo de R$ 10,00
+- transferências acima do limite sem token adicional
+- ausência de campos obrigatórios
+- análise de divergências entre comportamento observado e contrato esperado
+
+> Parte dos cenários de transferência está em evolução e também está sendo usada para registro de bugs e inconsistências de contrato da API.
+
+---
+
+## Regras de negócio consideradas nos testes
+
+Com base na documentação atual da API, algumas regras relevantes já observadas são:
+
+- `username` e `senha` são obrigatórios no login
+- o token JWT possui expiração configurada de **1 hora**
+- o valor mínimo para transferências é **R$ 10,00**
+- transferências acima de **R$ 5.000,00** exigem token adicional
+- contas de origem e destino devem existir e estar ativas
+- falhas de validação devem retornar respostas coerentes com o contrato documentado
+
+---
+
+## Defeitos e divergências identificadas
+
+Durante a automação, alguns comportamentos observados diferem do contrato documentado no Swagger.
+
+Exemplos de pontos relevantes encontrados durante a evolução da suíte:
+
+- cenários estruturalmente inválidos retornando status diferentes do esperado pelo contrato
+- necessidade de aprofundar análise em respostas como `404` e `500` para entradas que deveriam ser tratadas como `400`
+- divergências entre comportamento observado e resposta esperada em alguns cenários de autenticação e transferências
+
+Esses registros são importantes porque demonstram não apenas execução de testes, mas também:
+
+- leitura de contrato
+- análise crítica da API
+- identificação de possíveis bugs
+- rastreabilidade entre cenário, comportamento esperado e comportamento observado
+
+---
+
+## Abordagem de testes
+
+A estratégia adotada busca combinar:
+
+- cenários positivos e negativos
+- cobertura orientada por risco
+- validação de contrato HTTP
+- uso de factories para dados de entrada
+- helpers para autenticação, ambiente e reset de base
+- parametrização de cenários repetitivos para reduzir duplicação e melhorar manutenção
+
+---
+
+## Próximos passos
+
+Entre os próximos incrementos planejados para o repositório:
+
+- expandir cobertura de transferências
+- organizar documentação detalhada dos cenários implementados em arquivo `.md` próprio
+- incluir mais evidências de bugs e divergências de contrato
+- evoluir a padronização da suíte
+- ampliar cobertura para outros endpoints relevantes da aplicação
+
+---
+
+## Observação importante sobre autoria
+
+Este repositório **não é o código-fonte original da API banco-api**.
+
+A aplicação usada como sistema sob teste foi desenvolvida por **Júlio de Lima**.
+
+O foco deste projeto está na criação e evolução de uma suíte de **testes automatizados independente**, construída por mim para fins de prática, estudo, análise técnica.
