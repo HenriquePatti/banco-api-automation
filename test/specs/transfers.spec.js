@@ -4,6 +4,7 @@ const { resetDatabase } = require('../utils/db-helper');
 const { requireEnv } = require('../utils/env');
 const { obtainToken } = require('../utils/auth');
 const { transferPayload } = require('../factories/transfers.factory');
+const { removeField } = require('../helpers/remove-field');
 
 describe('Transferências', () => {
   describe('POST /transferencias', () => {
@@ -65,7 +66,7 @@ describe('Transferências', () => {
 
     describe('transferências com valores acima de R$ 5000 sem token adicional não são permitidas', () => {
       it('deve retornar 403 quando o valor for maior que R$ 5000 sem token adicional', async () => {
-        const payload = transferPayload({ valor: 5000.1});
+        const payload = transferPayload({ valor: 5000.1 });
 
         const response = await request(BASE_URL)
           .post('/transferencias')
@@ -78,6 +79,39 @@ describe('Transferências', () => {
         expect(response.body).to.be.an('object');
         expect(response.body).to.have.property('error');
         expect(response.body.error).to.be.a('string').and.to.not.be.empty;
+      });
+    });
+
+    describe('transferências com campos obrigatórios ausentes', () => {
+      const missingRequiredFields400 = [
+        {
+          name: 'contaOrigem',
+          payload: () => removeField(transferPayload(), 'contaOrigem')
+        },
+        {
+          name: 'contaDestino',
+          payload: () => removeField(transferPayload(), 'contaDestino')
+        },
+        {
+          name: 'valor',
+          payload: () => removeField(transferPayload(), 'valor')
+        }
+      ];
+
+      missingRequiredFields400.forEach(({ name, payload }) => {
+        it(`deve retornar 400 quando o parametro ${name} não for informado`, async () => {
+          const response = await request(BASE_URL)
+            .post('/transferencias')
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${token}`)
+            .send(payload());
+
+          expect(response.status).to.equal(400);
+          expect(response.headers['content-type']).to.include('application/json');
+          expect(response.body).to.be.an('object');
+          expect(response.body).to.have.property('error');
+          expect(response.body.error).to.be.a('string').and.to.not.be.empty;
+        });
       });
     });
 
