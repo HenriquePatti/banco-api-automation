@@ -129,6 +129,31 @@ No seu MySQL local, crie o banco com o nome esperado pelo projeto:
 
 ```sql
 CREATE DATABASE banco;
+USE banco;
+
+CREATE TABLE contas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    titular VARCHAR(100) NOT NULL,
+    saldo DECIMAL(10, 2) NOT NULL,
+    ativa BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE transferencias (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    conta_origem_id INT NOT NULL,
+    conta_destino_id INT NOT NULL,
+    valor DECIMAL(10, 2) NOT NULL,
+    data_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
+    autenticada BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (conta_origem_id) REFERENCES contas(id),
+    FOREIGN KEY (conta_destino_id) REFERENCES contas(id)
+);
+
+CREATE TABLE usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    senha VARCHAR(255) NOT NULL
+);
 ```
 
 > Se você quiser usar outro nome, ajuste também a variável `DB_NAME` no arquivo `.env`.
