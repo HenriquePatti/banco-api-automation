@@ -429,20 +429,72 @@ Com base na documentação atual da API, algumas regras relevantes já observada
 
 ## Defeitos e divergências identificadas
 
-Durante a automação, alguns comportamentos observados diferem do contrato documentado no Swagger.
+Durante a automação, os seguintes bugs foram identificados na API.
+Os testes que evidenciam cada defeito estão na suíte `test/specs/transfers.spec.js`.
 
-Exemplos de pontos relevantes encontrados durante a evolução da suíte:
+---
 
-- cenários estruturalmente inválidos retornando status diferentes do esperado pelo contrato
-- necessidade de aprofundar análise em respostas como `404` e `500` para entradas que deveriam ser tratadas como `400`
-- divergências entre comportamento observado e resposta esperada em alguns cenários de autenticação e transferências
+### BUG-01 — Regra de valor limite incorreta no endpoint de transferências
 
-Esses registros são importantes porque demonstram não apenas execução de testes, mas também:
+**Endpoint:** `POST /transferencias`
+**Severidade:** Alta
+**Tipo:** Regra de negócio
 
-- leitura de contrato
-- análise crítica da API
-- identificação de possíveis bugs
-- rastreabilidade entre cenário, comportamento esperado e comportamento observado
+| | Detalhe |
+|---|---|
+| **Comportamento esperado** | Transferências com `valor > 5000` devem exigir token adicional |
+| **Comportamento observado** | A API exige token adicional para `valor >= 5000`, bloqueando transferências legítimas de exatamente R$ 5.000 |
+| **Status recebido** | `401` |
+| **Status esperado** | `201` |
+| **Teste que evidencia** | `deve realizar transferência com valor máximo de R$ 5000` |
+
+---
+
+### BUG-02 — Status code incorreto ao bloquear transferências acima do limite
+
+**Endpoint:** `POST /transferencias`
+**Severidade:** Média
+**Tipo:** Contrato HTTP
+
+| | Detalhe |
+|---|---|
+| **Comportamento esperado** | Transferências acima de R$ 5.000 sem token adicional devem retornar `403` (usuário autenticado, sem permissão) |
+| **Comportamento observado** | A API retorna `401` (não autorizado), indicando que o usuário não está autenticado — o que é incorreto, pois o token JWT foi enviado |
+| **Status recebido** | `401` |
+| **Status esperado** | `403` |
+| **Teste que evidencia** | `deve retornar 403 quando o valor for maior que R$ 5000 sem token adicional` |
+
+---
+
+### BUG-03 — Campos obrigatórios ausentes retornam 404 em vez de 400
+
+**Endpoint:** `POST /transferencias`
+**Severidade:** Alta
+**Tipo:** Validação de contrato
+
+| | Detalhe |
+|---|---|
+| **Comportamento esperado** | Ausência dos campos `contaOrigem` ou `contaDestino` deve retornar `400 Bad Request` com mensagem de validação |
+| **Comportamento observado** | A API retorna `404 Not Found`, indicando que tenta buscar a conta no banco antes de validar os campos obrigatórios |
+| **Status recebido** | `404` |
+| **Status esperado** | `400` |
+| **Testes que evidenciam** | `deve retornar 400 quando o parametro contaOrigem não for informado` e `deve retornar 400 quando o parametro contaDestino não for informado` |
+
+---
+
+### BUG-04 — Ausência do campo `valor` causa erro interno (500)
+
+**Endpoint:** `POST /transferencias`
+**Severidade:** Crítica
+**Tipo:** Tratamento de erro
+
+| | Detalhe |
+|---|---|
+| **Comportamento esperado** | Ausência do campo `valor` deve retornar `400 Bad Request` com mensagem de validação |
+| **Comportamento observado** | A API não trata a ausência do campo e lança uma exceção interna, retornando `500 Internal Server Error` |
+| **Status recebido** | `500` |
+| **Status esperado** | `400` |
+| **Teste que evidencia** | `deve retornar 400 quando o parametro valor não for informado` |
 
 ---
 
