@@ -19,7 +19,7 @@ describe('Transferências', () => {
     describe('transferências com valor mínimo e máximo sem token adicional', () => {
       const valuesMinMax = [
         { name: 'valor mínimo de R$ 10', payload: transferPayload({ valor: 10 }) },
-        { name: 'valor de R$ 2500', payload: transferPayload({ valor: 2500 }) },
+        { name: 'valor intermediário de R$ 2500', payload: transferPayload({ valor: 2500 }) },
         { name: 'valor máximo de R$ 5000', payload: transferPayload({ valor: 5000 }) }
       ];
 
