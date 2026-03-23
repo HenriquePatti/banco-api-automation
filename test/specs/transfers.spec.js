@@ -9,6 +9,7 @@ const { removeField } = require('../helpers/remove-field');
 describe('Transferências', () => {
   describe('POST /transferencias', () => {
     const BASE_URL = requireEnv('BASE_URL');
+    const transferToken = requireEnv('TEST_TRANSFER_TOKEN');
     let token;
 
     beforeEach(async () => {
@@ -114,6 +115,23 @@ describe('Transferências', () => {
         });
       });
     });
+
+    describe('transferêncis com valores acima de R$: 5.000 e token adicional', () => {
+      const payload = transferPayload({ valor: 5001, token: transferToken });
+
+      it('deve transferir valores acima de R$ 5.000,00 quando o token adicional válido', async () => {
+        const response = await request(BASE_URL)
+          .post('/transferencias')
+          .set('Content-Type', 'application/json')
+          .set('Authorization', `Bearer ${token}`)
+          .send(payload);
+        expect(response.status).to.equal(201);
+        expect(response.headers['content-type']).to.include('application/json');
+        expect(response.body).to.be.an('object');
+        expect(response.body).to.have.property('message');
+        expect(response.body.message).to.be.a('string').and.to.not.be.empty;
+      });
+    },);
 
   });
 });
