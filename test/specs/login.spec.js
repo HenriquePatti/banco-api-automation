@@ -158,9 +158,7 @@ describe('Login', () => {
     });
 
     describe('Validação de métodos não suportados', () => {
-      const scenarios405 = ['get', 'put', 'patch', 'delete'];
-
-      scenarios405.forEach((method) => {
+      ['get', 'put', 'patch', 'delete'].forEach((method) => {
         it(`deve retornar 405 ao utilizar o método ${method.toUpperCase()}`, async () => {
           const response = await request(BASE_URL)[method]('/login')
             .set('Content-Type', 'application/json')
