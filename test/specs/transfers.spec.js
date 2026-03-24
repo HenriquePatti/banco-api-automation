@@ -116,10 +116,10 @@ describe('Transferências', () => {
       });
     });
 
-    describe('transferêncis com valores acima de R$: 5.000 e token adicional', () => {
-      const payload = transferPayload({ valor: 5001, token: transferToken });
-
+    describe('transferências com valores acima de R$: 5.000 e token adicional', () => {
       it('deve transferir valores acima de R$ 5.000,00 quando o token adicional válido', async () => {
+        const payload = transferPayload({ valor: 5001, token: transferToken });
+        
         const response = await request(BASE_URL)
           .post('/transferencias')
           .set('Content-Type', 'application/json')
@@ -131,7 +131,23 @@ describe('Transferências', () => {
         expect(response.body).to.have.property('message');
         expect(response.body.message).to.be.a('string').and.to.not.be.empty;
       });
-    },);
 
+      it('deve impedir transferencias com valores acima de R$5.000 quando o token adicional é inválido', async ()=> {
+        const invalidTransferToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MS@idXNlcm5hbWUiOiJqdWxpb&5saW1hIiwiaWF0IjoxNzc0MzIwMjI4LCJleHAiOjE3NzQzMjM4Mjh9.3zSiYdk04-q3-VB_X0VP6uY0A9R_Qd6Lc-mrfsMVIyk'
+        const payload = transferPayload({ valor: 6500, token: invalidTransferToken });
+
+        const response = await request(BASE_URL)
+          .post('/transferencias')
+          .set('Content-Type', 'application/json')
+          .set('Authorization', `Bearer ${token}`)
+          .send(payload)
+        expect(response.status).to.equal(401);
+        expect(response.headers['content-type']).to.include('application/json');
+        expect(response.body).to.be.an('object');
+        expect(response.body).to.have.property('error');
+        expect(response.body.error).to.be.a('string').and.to.not.be.empty;
+      });
+
+    });
   });
 });
