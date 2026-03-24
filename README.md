@@ -400,17 +400,23 @@ Ao final da execução, os arquivos de evidência ficam disponíveis para consul
 ## Transferências (`POST /transferencias`)
 
 ### Cenários positivos
-- transferência com valor mínimo permitido
-- transferência com valor intermediário válido
-- transferência dentro da faixa sem token adicional
+- transferência com valor mínimo permitido (R$ 10)
+- transferência com valor intermediário válido (R$ 2.500)
+- transferência com valor máximo sem token adicional (R$ 5.000)
+- transferência acima de R$ 5.000 com token adicional válido
 
 ### Cenários negativos
-- valores abaixo de R$ 10,00
-- transferências acima do limite sem token adicional
-- ausência de campos obrigatórios
-- análise de divergências entre comportamento observado e contrato esperado
+- valores abaixo de R$ 10,00 (R$ 9,99 / R$ 0 / R$ -1)
+- transferência acima de R$ 5.000 sem token adicional
+- transferência acima de R$ 5.000 com token adicional inválido
+- ausência de campos obrigatórios (`contaOrigem`, `contaDestino`, `valor`)
+- saldo insuficiente na conta de origem
 
-> Parte dos cenários de transferência está em evolução e também está sendo usada para registro de bugs e inconsistências de contrato da API.
+> Parte dos cenários está sendo usada para registro de bugs e inconsistências de contrato da API.
+
+### Observação — métodos HTTP não testados
+
+Os métodos `DELETE`, `PUT` e `PATCH` estão disponíveis em `/transferencias/:id` mas não deveriam existir. Transferências são operações financeiras imutáveis — permitir alteração ou exclusão representa risco de conformidade e auditoria. Os cenários de método não permitido foram omitidos intencionalmente por este motivo.
 
 ---
 
@@ -502,6 +508,9 @@ Os testes que evidenciam cada defeito estão na suíte `test/specs/transfers.spe
 
 A estratégia adotada busca combinar:
 
+- heurística **VADER** aplicada aos fluxos críticos
+- **partição de equivalência** para agrupamento de cenários com comportamento esperado igual
+- **análise de valor limite** nos extremos das regras de negócio
 - cenários positivos e negativos
 - cobertura orientada por risco
 - validação de contrato HTTP
@@ -515,11 +524,10 @@ A estratégia adotada busca combinar:
 
 Entre os próximos incrementos planejados para o repositório:
 
-- expandir cobertura de transferências
-- organizar documentação detalhada dos cenários implementados em arquivo `.md` próprio
+- organizar documentação detalhada dos cenários em arquivo `TEST_CASES.md` com rastreabilidade por ID
+- ampliar cobertura para outros endpoints relevantes da aplicação
 - incluir mais evidências de bugs e divergências de contrato
 - evoluir a padronização da suíte
-- ampliar cobertura para outros endpoints relevantes da aplicação
 
 ---
 
