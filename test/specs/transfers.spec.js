@@ -147,7 +147,25 @@ describe('Transferências', () => {
         expect(response.body).to.have.property('error');
         expect(response.body.error).to.be.a('string').and.to.not.be.empty;
       });
-
     });
+
+    describe(`transferência com saldo insuficiente na conta de origem`, () => {                                                     
+    it('deve retornar 422 quando a conta de origem não tiver saldo suficiente', async () => {                                     
+      const payload = transferPayload({ valor: 10001 });                                                                          
+                                                                                                                                  
+      const response = await request(BASE_URL)                                                                                    
+        .post('/transferencias')                                                                                                  
+        .set('Content-Type', 'application/json')
+        .set('Authorization', `Bearer ${token}`)
+        .send(payload);                                                                                                           
+      expect(response.status).to.equal(422);                                                                                      
+      expect(response.headers['content-type']).to.include('application/json');
+      expect(response.body).to.be.an('object');
+      expect(response.body).to.have.property('error');
+      expect(response.body.error).to.be.a('string').and.to.not.be.empty;                                                          
+    });
+  });    
+
+
   });
 });
