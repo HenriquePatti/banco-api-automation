@@ -128,6 +128,7 @@ describe('Transferências', () => {
           .set('Content-Type', 'application/json')
           .set('Authorization', `Bearer ${token}`)
           .send(payload);
+
         expect(response.status).to.equal(201);
         expect(response.headers['content-type']).to.include('application/json');
         expect(response.body).to.be.an('object');
@@ -142,7 +143,8 @@ describe('Transferências', () => {
           .post('/transferencias')
           .set('Content-Type', 'application/json')
           .set('Authorization', `Bearer ${token}`)
-          .send(payload)
+          .send(payload);
+
         expect(response.status).to.equal(401);
         expect(response.headers['content-type']).to.include('application/json');
         expect(response.body).to.be.an('object');
@@ -162,6 +164,23 @@ describe('Transferências', () => {
           .send(payload);
 
         expect(response.status).to.equal(422);
+        expect(response.headers['content-type']).to.include('application/json');
+        expect(response.body).to.be.an('object');
+        expect(response.body).to.have.property('error');
+        expect(response.body.error).to.be.a('string').and.to.not.be.empty;
+      });
+    });
+
+    describe('transferências sem autenticação', () => {
+      it('deve retornar 401 quando o header Authorization não for enviado', async () => {
+        const payload = transferPayload();
+
+        const response = await request(BASE_URL)
+          .post('/transferencias')
+          .set('Content-Type', 'application/json')
+          .send(payload);
+
+        expect(response.status).to.equal(401);
         expect(response.headers['content-type']).to.include('application/json');
         expect(response.body).to.be.an('object');
         expect(response.body).to.have.property('error');
