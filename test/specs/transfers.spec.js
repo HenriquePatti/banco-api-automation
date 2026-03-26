@@ -23,7 +23,8 @@ describe('Transferências', () => {
       const valuesMinMax = [
         { name: 'valor mínimo de R$ 10', payload: transferPayload({ valor: 10 }) },
         { name: 'valor intermediário de R$ 2500', payload: transferPayload({ valor: 2500 }) },
-        { name: 'valor máximo de R$ 5000', payload: transferPayload({ valor: 5000 }) }
+        { name: 'valor máximo de R$ 5000', payload: transferPayload({ valor: 5000 }) },
+        { name: 'valor igual ao saldo disponível de R$ 10000', payload: transferPayload({ valor: 10000 }) }
       ];
 
       valuesMinMax.forEach(({ name, payload }) => {
