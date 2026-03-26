@@ -10,6 +10,8 @@ describe('Transferências', () => {
   describe('POST /transferencias', () => {
     const BASE_URL = requireEnv('BASE_URL');
     const transferToken = requireEnv('TEST_TRANSFER_TOKEN');
+    // Token intencionalmente malformado para cenários de rejeição
+    const INVALID_TRANSFER_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MS@idXNlcm5hbWUiOiJqdWxpb&5saW1hIiwiaWF0IjoxNzc0MzIwMjI4LCJleHAiOjE3NzQzMjM4Mjh9.3zSiYdk04-q3-VB_X0VP6uY0A9R_Qd6Lc-mrfsMVIyk';
     let token;
 
     beforeEach(async () => {
@@ -132,9 +134,8 @@ describe('Transferências', () => {
         expect(response.body.message).to.be.a('string').and.to.not.be.empty;
       });
 
-      it('deve impedir transferencias com valores acima de R$5.000 quando o token adicional é inválido', async ()=> {
-        const invalidTransferToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MS@idXNlcm5hbWUiOiJqdWxpb&5saW1hIiwiaWF0IjoxNzc0MzIwMjI4LCJleHAiOjE3NzQzMjM4Mjh9.3zSiYdk04-q3-VB_X0VP6uY0A9R_Qd6Lc-mrfsMVIyk'
-        const payload = transferPayload({ valor: 6500, token: invalidTransferToken });
+      it('deve impedir transferencias com valores acima de R$5.000 quando o token adicional é inválido', async () => {
+        const payload = transferPayload({ valor: 6500, token: INVALID_TRANSFER_TOKEN });
 
         const response = await request(BASE_URL)
           .post('/transferencias')
@@ -149,23 +150,23 @@ describe('Transferências', () => {
       });
     });
 
-    describe(`transferência com saldo insuficiente na conta de origem`, () => {                                                     
-    it('deve retornar 422 quando a conta de origem não tiver saldo suficiente', async () => {                                     
-      const payload = transferPayload({ valor: 10001 });                                                                          
-                                                                                                                                  
-      const response = await request(BASE_URL)                                                                                    
-        .post('/transferencias')                                                                                                  
-        .set('Content-Type', 'application/json')
-        .set('Authorization', `Bearer ${token}`)
-        .send(payload);                                                                                                           
-      expect(response.status).to.equal(422);                                                                                      
-      expect(response.headers['content-type']).to.include('application/json');
-      expect(response.body).to.be.an('object');
-      expect(response.body).to.have.property('error');
-      expect(response.body.error).to.be.a('string').and.to.not.be.empty;                                                          
-    });
-  });    
+    describe('transferência com saldo insuficiente na conta de origem', () => {
+      it('deve retornar 422 quando a conta de origem não tiver saldo suficiente', async () => {
+        const payload = transferPayload({ valor: 10001 });
 
+        const response = await request(BASE_URL)
+          .post('/transferencias')
+          .set('Content-Type', 'application/json')
+          .set('Authorization', `Bearer ${token}`)
+          .send(payload);
+
+        expect(response.status).to.equal(422);
+        expect(response.headers['content-type']).to.include('application/json');
+        expect(response.body).to.be.an('object');
+        expect(response.body).to.have.property('error');
+        expect(response.body.error).to.be.a('string').and.to.not.be.empty;
+      });
+    });
 
   });
 });
